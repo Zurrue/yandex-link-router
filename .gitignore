@@ -4,6 +4,7 @@ dist/
 # generated locally
 tools/*.exe
 assets/icon-preview.png
+assets/icon-variants.png
 
 # local editor / OS noise
 .vs/
