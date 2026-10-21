@@ -37,9 +37,9 @@ The router only sees links that the **shell** hands over. Everything that happen
 | Where the link comes from | Who handles it |
 |---|---|
 | Telegram, Discord, mail client, Explorer, desktop shortcut, Start menu | `ymrouter.exe` → app |
-| Click on a link inside a web page (Firefox + userscript) | userscript → app |
-| `music.yandex.ru` URL typed or pasted into the address bar | page opens, userscript adds an "Open in Yandex Music" button |
-| Link inside Chrome / Edge / Opera / other browser | that browser, as usual (see below) |
+| Click on a link inside a web page | that browser — the router never sees it |
+| `music.yandex.ru` URL typed or pasted into the address bar | that browser |
+| Link inside Chrome / Edge / Opera / other browser | that browser, as usual |
 | `yandexmusic://...` link | the app itself, no router involved |
 
 The router matches only exact hosts (`music.yandex.ru`, `.com`, `.by`, `.kz`, `.uz`)
@@ -67,25 +67,15 @@ has to run the installer once.
 
 ## Links clicked inside the browser
 
-A browser page cannot be intercepted by the shell, so the router is out of the picture
-here. Two things happen instead:
+A browser page cannot be intercepted by the shell: a click inside a tab never reaches
+Windows, so the router cannot see or redirect those links. They simply open in the
+browser — a limitation of the approach, not a setting.
 
-- **Firefox** — install the userscript from [`userscript/`](userscript/yandex-music-app.user.js)
-  (Tampermonkey or Violentmonkey). It catches clicks on Yandex Music links on any site
-  and opens the app. If a page was opened without a click (address pasted, bookmark,
-  history), Firefox silently blocks script-initiated external-protocol navigation, so
-  the script shows a yellow **"Открыть в Яндекс Музыке"** button instead.
-- **Chrome, Edge, Opera, Vivaldi, Yandex Browser** — need an equivalent extension;
-  there is none in this repository yet.
+The only way around it is a browser extension that intercepts navigation. This project
+does not ship one.
 
-Notes for the userscript path:
-
-- it only works where the extension is installed and enabled (not in private windows
-  by default, not in other browsers);
-- middle-click and "open in new tab" still land on the page, then the yellow button
-  appears;
-- if the page is already a Yandex Music track/album/artist page, the button is always
-  there.
+If a link has already opened in the browser, the track has to be found in the app
+manually. Links that arrive in a messenger or another app are caught by the router.
 
 ## What the installer does
 
@@ -98,6 +88,32 @@ Notes for the userscript path:
 - opens `ms-settings:defaultapps`.
 
 No services, no scheduled tasks, no elevation.
+
+## Changed your default browser?
+
+The router remembers the browser at install time and does not follow later changes.
+If you switch the default browser, ordinary links keep going to the old one.
+
+Fix: run the installer again. It picks up the current default browser (or the saved
+one, if the router is still the default), updates the settings and opens *Default
+apps* again. You do not need to re-select "Yandex Link Router" if it is already the
+default.
+
+## Uninstall
+
+1. Settings → Apps → Installed apps → "Yandex Link Router" → Uninstall.
+2. In the Settings window that opens, pick your browser again: the router entry is
+   gone and Windows will ask what should open links.
+
+Everything is removed: `%LOCALAPPDATA%\Programs\YandexLinkRouter`, the `HKCU` keys
+(`YMRouter.HTTP`/`.HTTPS`, `Software\YandexLinkRouter`, `StartMenuInternet\YMRouter`,
+the `RegisteredApplications` value) and the log in `%LOCALAPPDATA%\YandexLinkRouter`.
+
+If uninstalling from Settings is not available, run the uninstaller directly:
+
+```
+%LOCALAPPDATA%\Programs\YandexLinkRouter\uninstall.exe /uninstall
+```
 
 ## Build
 
@@ -114,7 +130,6 @@ The router is embedded into the installer as a resource, so the output is a sing
 ```
 src/Router.cs          link router itself
 src/Setup.cs           per-user installer / uninstaller
-userscript/            optional Firefox helper for in-browser clicks
 build.ps1              build script (router -> installer -> zip)
 install-notes.txt      instructions shipped inside the zip
 .github/workflows/     CI: build on push, attach binaries on tag
