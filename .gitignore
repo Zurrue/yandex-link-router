@@ -1,0 +1,9 @@
+# build output
+dist/
+
+# local editor / OS noise
+.vs/
+.idea/
+*.user
+Thumbs.db
+desktop.ini
