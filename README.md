@@ -1,152 +1,155 @@
 # Yandex Link Router
 
-**English** | [Русский](README.ru.md)
+**Русский** | [English](README.en.md)
 
-Makes Yandex Music links open in the desktop app instead of the browser on Windows —
-without touching the browser itself.
+Ссылки на Яндекс Музыку открываются в десктопном приложении, а не в браузере —
+без вмешательства в сам браузер.
 
-**Windows 10 and 11 only.** The whole approach is built on the Windows shell
-(ProgIDs, `StartMenuInternet` clients, the `yandexmusic://` protocol registration);
-macOS and Linux handle links differently and are out of scope.
+**Только Windows 10 и 11.** Весь подход держится на оболочке Windows (ProgID,
+клиенты `StartMenuInternet`, регистрация протокола `yandexmusic://`); в macOS и
+Linux ссылки обрабатываются иначе, они вне рамок проекта.
 
 ```
-link from Telegram / Word / anywhere
+ссылка из Telegram / Word / откуда угодно
         |
-   ymrouter.exe            <- becomes the default "browser"
-        |-- music.yandex.*/album|track|artist|playlist|users/...  -> yandexmusic://... (app)
-        `-- everything else                                        -> your browser
+   ymrouter.exe            <- становится «браузером по умолчанию»
+        |-- music.yandex.*/album|track|artist|playlist|users/...  -> yandexmusic://... (приложение)
+        `-- всё остальное                                          -> ваш браузер
 ```
 
-## Why
+## Зачем
 
-Windows has no per-site handler for `https://`: the "Apps for websites" feature only
-works for packaged (Microsoft Store) apps, and the Yandex Music desktop app is an
-Electron app that registers only its own `yandexmusic://` protocol. A Store version
-is no longer available, so links like `https://music.yandex.ru/album/1/track/2`
-always landed in the browser.
+В Windows нет обработчика для отдельного сайта: механизм «Apps for websites» работает
+только для приложений из Microsoft Store, а десктопная Яндекс Музыка — Electron-приложение,
+которое регистрирует лишь собственный протокол `yandexmusic://`. Версии в Store больше нет,
+поэтому ссылки вида `https://music.yandex.ru/album/1/track/2` всегда попадали в браузер.
 
-This project puts a tiny (24 KB) router between the shell and the browser. It registers
-itself as a browser candidate, inspects each URL and either forwards it to the app as
-a `yandexmusic://` deeplink or passes it to the browser that was default before.
+Этот проект ставит между системой и браузером крошечный маршрутизатор (24 КБ). Он
+регистрируется как кандидат в браузеры, смотрит на адрес и либо отправляет его
+приложению как deeplink `yandexmusic://`, либо передаёт браузеру, который был
+выбран по умолчанию раньше.
 
-## Where a link goes
+## Куда попадает ссылка
 
-The router only sees links that the **shell** hands over. Everything that happens
-*inside* a browser tab never reaches it — that is a Windows boundary, not a bug.
+Маршрутизатор видит только те ссылки, которые ему передаёт **система**. Всё, что
+происходит внутри вкладки браузера, до него не доходит — это граница Windows, а не
+недоделка.
 
-| Where the link comes from | Who handles it |
+| Откуда ссылка | Кто обрабатывает |
 |---|---|
-| Telegram, Discord, mail client, Explorer, desktop shortcut, Start menu | `ymrouter.exe` → app |
-| Click on a link inside a web page (Firefox + userscript) | userscript → app |
-| `music.yandex.ru` URL typed or pasted into the address bar | page opens, userscript adds an "Open in Yandex Music" button |
-| Link inside Chrome / Edge / Opera / other browser | that browser, as usual (see below) |
-| `yandexmusic://...` link | the app itself, no router involved |
+| Telegram, Discord, почта, проводник, ярлык, меню «Пуск» | `ymrouter.exe` → приложение |
+| Клик по ссылке на странице (Firefox + userscript) | userscript → приложение |
+| Адрес `music.yandex.ru` вставлен в строку браузера | страница открывается, userscript добавляет кнопку «Открыть в Яндекс Музыке» |
+| Ссылка внутри Chrome / Edge / Opera / другого браузера | этот браузер, как обычно (см. ниже) |
+| Ссылка `yandexmusic://...` | само приложение, маршрутизатор не нужен |
 
-The router matches only exact hosts (`music.yandex.ru`, `.com`, `.by`, `.kz`, `.uz`)
-and only content paths (`/album/`, `/track/`, `/artist/`, `/playlist/`, `/playlists/`,
-`/users/`). Everything else — including `music.yandex.ru/` itself, search pages and
-login pages — goes to the browser. Query parameters (`ref_id`, UTM tags) are dropped
-when the deeplink is built.
+Маршрутизатор сравнивает только точные хосты (`music.yandex.ru`, `.com`, `.by`,
+`.kz`, `.uz`) и только содержательные пути (`/album/`, `/track/`, `/artist/`,
+`/playlist/`, `/playlists/`, `/users/`). Всё остальное — включая главную
+`music.yandex.ru/`, поиск и страницы входа — уходит в браузер. Параметры (`ref_id`,
+UTM-метки) при сборке deeplink отбрасываются.
 
-## Install
+## Установка
 
-1. Download `YandexLinkRouter-Setup.exe` from the [latest release](../../releases/latest).
-2. Run it — no admin rights required. SmartScreen may warn about an unsigned binary:
-   *More info → Run anyway*.
-3. In the Settings window that opens, pick **Yandex Link Router** as your web browser
-   (Windows 10: *Apps → Default apps → Web browser*; Windows 11: *Apps → Default apps →
-   Yandex Link Router → set http and https*).
-4. Click any Yandex Music link.
+1. Скачать `YandexLinkRouter-Setup.exe` из [последнего релиза](../../releases/latest).
+2. Запустить — права администратора не нужны. SmartScreen может предупредить о
+   неподписанном файле: *Подробнее → Выполнить в любом случае*.
+3. В открывшихся Параметрах выбрать **Yandex Link Router** как веб-браузер
+   (Windows 10: *Приложения → Приложения по умолчанию → Веб-браузер*;
+   Windows 11: *Приложения → Приложения по умолчанию → Yandex Link Router →
+   задать для http и https*).
+4. Кликнуть любую ссылку на Яндекс Музыку.
 
-Requirements: Windows 10/11, .NET Framework 4.x (built in), any installed browser,
-and the Yandex Music desktop app. Without the app the router quietly falls back to
-the browser.
+Требования: Windows 10/11, .NET Framework 4.x (встроен), любой установленный
+браузер и приложение Яндекс Музыки. Без приложения маршрутизатор просто
+передаёт ссылки браузеру.
 
-The install is per user (`HKCU` + `%LOCALAPPDATA%`), so on a shared PC every account
-has to run the installer once.
+Установка — на пользователя (`HKCU` + `%LOCALAPPDATA%`), поэтому на общем ПК
+установщик нужно запустить в каждом профиле.
 
-## Links clicked inside the browser
+## Ссылки, на которые кликают внутри браузера
 
-A browser page cannot be intercepted by the shell, so the router is out of the picture
-here. Two things happen instead:
+Страницу в браузере система перехватить не может, здесь маршрутизатор бессилен.
+Работают два других механизма:
 
-- **Firefox** — install the userscript from [`userscript/`](userscript/yandex-music-app.user.js)
-  (Tampermonkey or Violentmonkey). It catches clicks on Yandex Music links on any site
-  and opens the app. If a page was opened without a click (address pasted, bookmark,
-  history), Firefox silently blocks script-initiated external-protocol navigation, so
-  the script shows a yellow **"Открыть в Яндекс Музыке"** button instead.
-- **Chrome, Edge, Opera, Vivaldi, Yandex Browser** — need an equivalent extension;
-  there is none in this repository yet.
+- **Firefox** — поставить userscript из [`userscript/`](userscript/yandex-music-app.user.js)
+  (Tampermonkey или Violentmonkey). Он ловит клики по ссылкам Яндекс Музыки на любых
+  сайтах и открывает приложение. Если страница открылась без клика (адрес вставили,
+  закладка, история), Firefox молча блокирует переход на внешний протокол из скрипта,
+  поэтому скрипт показывает жёлтую кнопку **«Открыть в Яндекс Музыке»**.
+- **Chrome, Edge, Opera, Vivaldi, Яндекс Браузер** — нужно аналогичное расширение;
+  в этом репозитории его пока нет.
 
-Notes for the userscript path:
+Нюансы userscript-варианта:
 
-- it only works where the extension is installed and enabled (not in private windows
-  by default, not in other browsers);
-- middle-click and "open in new tab" still land on the page, then the yellow button
-  appears;
-- if the page is already a Yandex Music track/album/artist page, the button is always
-  there.
+- работает только там, где стоит и включено расширение (в приватных окнах по
+  умолчанию — нет, в других браузерах — нет);
+- клик средней кнопкой и «открыть в новой вкладке» всё равно сначала открывают
+  страницу, дальше появляется жёлтая кнопка;
+- на странице трека/альбома/артиста кнопка есть всегда.
 
-## What the installer does
+## Что делает установщик
 
-- copies `ymrouter.exe` to `%LOCALAPPDATA%\Programs\YandexLinkRouter`;
-- remembers the current default browser and its command line;
-- registers `YMRouter.HTTP` / `YMRouter.HTTPS` ProgIDs, a
-  `Software\Clients\StartMenuInternet\YMRouter` client and a `RegisteredApplications`
-  entry, so the app shows up in *Default apps*;
-- adds an entry to *Installed apps* with an uninstaller;
-- opens `ms-settings:defaultapps`.
+- копирует `ymrouter.exe` в `%LOCALAPPDATA%\Programs\YandexLinkRouter`;
+- запоминает текущий браузер по умолчанию и его командную строку;
+- регистрирует ProgID `YMRouter.HTTP` / `YMRouter.HTTPS`, клиент
+  `Software\Clients\StartMenuInternet\YMRouter` и запись в `RegisteredApplications`,
+  чтобы приложение появилось в «Приложениях по умолчанию»;
+- добавляет запись в «Установленные приложения» с деинсталлятором;
+- открывает `ms-settings:defaultapps`.
 
-No services, no scheduled tasks, no elevation.
+Никаких служб, задач в планировщике и прав администратора.
 
-## Build
+## Сборка
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-Only `csc.exe` from .NET Framework 4 is needed (present on every Windows 10/11).
-The router is embedded into the installer as a resource, so the output is a single
-24 KB executable. CI builds the same thing on every push.
+Нужен только `csc.exe` из .NET Framework 4 (есть на любой Windows 10/11).
+Маршрутизатор встраивается в установщик ресурсом, поэтому на выходе один
+исполняемый файл на 24 КБ. CI собирает то же самое на каждый push.
 
-## Repository layout
+## Структура
 
 ```
-src/Router.cs          link router itself
-src/Setup.cs           per-user installer / uninstaller
-userscript/            optional Firefox helper for in-browser clicks
-build.ps1              build script (router -> installer -> zip)
-install-notes.txt      instructions shipped inside the zip
-.github/workflows/     CI: build on push, attach binaries on tag
+src/Router.cs          сам маршрутизатор
+src/Setup.cs           установщик и деинсталлятор (per-user)
+userscript/            необязательный помощник для кликов внутри Firefox
+build.ps1              сборка: маршрутизатор -> установщик -> zip
+install-notes.txt      инструкция, которая кладётся в zip
+.github/workflows/     CI: сборка на push, бинарники на тег
 ```
 
-## How the deeplink works
+## Как работает deeplink
 
-The app registers `yandexmusic://` and strips the prefix, treating the rest as a path:
-`yandexmusic://album/3891291/track/31995925` opens that track. The router builds
-exactly that from `https://music.yandex.ru/album/3891291/track/31995925?...`, so query
-parameters are dropped.
+Приложение регистрирует `yandexmusic://` и отбрасывает префикс, считая остаток путём:
+`yandexmusic://album/3891291/track/31995925` открывает нужный трек. Маршрутизатор
+строит такую ссылку из `https://music.yandex.ru/album/3891291/track/31995925?...`,
+поэтому параметры отбрасываются.
 
-## Limits and caveats
+## Ограничения и нюансы
 
-- Windows only. This is shell integration (registry ProgIDs, browser clients,
-  protocol handler), so it cannot be ported to macOS or Linux as is.
-- The browser is remembered at install time. Changed your default browser? Run the
-  installer again.
-- Windows protects the default-browser choice with a hash, so the last step is always
-  manual — a program cannot silently become the default browser. Windows feature
-  updates may reset the choice; just pick the router again.
-- Every link starts a new app process; the already running instance picks the deeplink
-  up via single-instance. The app's own log shows harmless cache errors during that.
-- If the Yandex Music app is not installed (or was removed), the router falls back to
-  the browser — `yandexmusic://` is checked before forwarding.
-- The router only understands `http`/`https`. `mailto:`, `ftp:` and other schemes are
-  handled by Windows as usual.
-- Both binaries are unsigned, so SmartScreen and some antivirus products may complain
-  once.
-- Uninstalling leaves the default-browser choice pointing at a removed app; Windows
-  will ask you to pick a browser, or pick it manually in *Default apps*.
+- Только Windows. Это интеграция с оболочкой (ProgID в реестре, клиенты браузеров,
+  обработчик протокола), перенести в macOS или Linux как есть нельзя.
+- Браузер запоминается на момент установки. Сменили браузер по умолчанию — запустите
+  установщик заново.
+- Windows защищает выбор браузера хешем, поэтому последний шаг всегда ручной:
+  программа не может молча стать браузером по умолчанию. Крупные обновления Windows
+  иногда сбрасывают выбор — тогда нужно выбрать маршрутизатор снова.
+- Каждая ссылка запускает новый процесс приложения; уже работающий экземпляр
+  подхватывает deeplink через single-instance. В логе приложения при этом видны
+  безобидные ошибки кэша.
+- Если приложение Яндекс Музыки не установлено (или его удалили), маршрутизатор
+  отдаёт ссылку браузеру: наличие протокола `yandexmusic://` проверяется перед
+  перенаправлением.
+- Маршрутизатор понимает только `http`/`https`. `mailto:`, `ftp:` и прочие схемы
+  Windows обрабатывает как обычно.
+- Оба файла без цифровой подписи, поэтому SmartScreen и некоторые антивирусы
+  могут один раз ругнуться.
+- После удаления выбор браузера остаётся за удалённым приложением — Windows
+  попросит выбрать браузер, либо выберите его вручную в «Приложениях по умолчанию».
 
-## License
+## Лицензия
 
-MIT — see [LICENSE](LICENSE).
+MIT — см. [LICENSE](LICENSE).
