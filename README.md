@@ -128,7 +128,7 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 
 Нужен только `csc.exe` из .NET Framework 4 (есть на любой Windows 10/11).
 Маршрутизатор встраивается в установщик ресурсом, поэтому на выходе один
-исполняемый файл на 24 КБ. CI собирает то же самое на каждый push.
+исполняемый файл около 80 КБ. CI собирает то же самое на каждый push.
 
 ## Структура
 
@@ -137,6 +137,8 @@ src/Router.cs          сам маршрутизатор
 src/Setup.cs           установщик и деинсталлятор (per-user)
 build.ps1              сборка: маршрутизатор -> установщик -> zip
 install-notes.txt      инструкция, которая кладётся в zip
+tools/make-assets.cs   генератор иконки и картинки для GitHub
+assets/                icon.ico и social-preview.png
 .github/workflows/     CI: сборка на push, бинарники на тег
 ```
 

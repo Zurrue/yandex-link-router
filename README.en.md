@@ -123,7 +123,7 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 
 Only `csc.exe` from .NET Framework 4 is needed (present on every Windows 10/11).
 The router is embedded into the installer as a resource, so the output is a single
-24 KB executable. CI builds the same thing on every push.
+~80 KB executable. CI builds the same thing on every push.
 
 ## Repository layout
 
@@ -132,6 +132,8 @@ src/Router.cs          link router itself
 src/Setup.cs           per-user installer / uninstaller
 build.ps1              build script (router -> installer -> zip)
 install-notes.txt      instructions shipped inside the zip
+tools/make-assets.cs   icon and GitHub social preview generator
+assets/                icon.ico and social-preview.png
 .github/workflows/     CI: build on push, attach binaries on tag
 ```
 

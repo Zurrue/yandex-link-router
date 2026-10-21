@@ -1,6 +1,10 @@
 # build output
 dist/
 
+# generated locally
+tools/*.exe
+assets/icon-preview.png
+
 # local editor / OS noise
 .vs/
 .idea/

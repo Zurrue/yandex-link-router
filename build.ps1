@@ -17,8 +17,19 @@ if (-not (Test-Path $csc)) { throw "csc.exe (.NET Framework 4) not found" }
 
 New-Item -ItemType Directory -Force -Path $dist | Out-Null
 
+# icon (regenerated on demand, committed in assets/)
+$icon = Join-Path $root "assets\icon.ico"
+if (-not (Test-Path $icon)) {
+    Write-Host "Generating assets..."
+    & $csc /nologo /target:exe /r:System.dll /r:System.Drawing.dll `
+        /out:"$root\tools\make-assets.exe" "$root\tools\make-assets.cs"
+    if ($LASTEXITCODE -ne 0) { throw "asset build failed" }
+    & "$root\tools\make-assets.exe" $root
+    if ($LASTEXITCODE -ne 0) { throw "asset generation failed" }
+}
+
 Write-Host "Building router..."
-& $csc /nologo /codepage:65001 /optimize+ /target:winexe `
+& $csc /nologo /codepage:65001 /optimize+ /target:winexe /win32icon:"$icon" `
     /r:System.dll /r:System.Core.dll `
     /out:"$dist\ymrouter.exe" "$src\Router.cs"
 
@@ -27,7 +38,7 @@ if ($LASTEXITCODE -ne 0) { throw "router build failed" }
 Write-Host "Building setup..."
 Push-Location $dist
 try {
-    & $csc /nologo /codepage:65001 /optimize+ /target:winexe `
+    & $csc /nologo /codepage:65001 /optimize+ /target:winexe /win32icon:"$icon" `
         /r:System.dll /r:System.Core.dll /r:System.Windows.Forms.dll `
         /resource:ymrouter.exe,payload.exe `
         /out:YandexLinkRouter-Setup.exe (Join-Path $src "Setup.cs")
